@@ -13,21 +13,26 @@ class Employee:
         self.calculate_payroll()
 
     def calculate_payroll(self):
-        self.r_day = self.basic / 26 
+        self.r_day = round(self.basic / 26, 2)
         self.earnings = self.att * self.r_day
         self.pension = self.pension_percentage * self.basic
         self.gross = self.earnings + self.ot
         self.taxable = self.gross - 150000
 
-        if self.taxable <= 300000:
-            self.paye_25 = self.taxable * 0.25
+        if self.taxable <= 0:
+            self.paye_25 = 0
             self.paye_30 = 0
+            self.taxable = 0
         else:
-            self.paye_25 = 300000 * 0.25
-            self.paye_30 = (self.taxable - 300000) * 0.30
+            if self.taxable <= 300000:
+                self.paye_25 = round(self.taxable * 0.25, 2)
+                self.paye_30 = 0
+            else:
+                self.paye_25 = round(300000 * 0.25, 2)
+                self.paye_30 = round((self.taxable - 300000) * 0.30, 2)
             
-        self.total_paye = self.paye_25 + self.paye_30
-        self.net = self.gross - self.total_paye
+        self.total_paye = round(self.paye_25 + self.paye_30, 2)
+        self.net = round(self.gross - self.total_paye, 2)
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
@@ -83,7 +88,7 @@ class PayrollSystem:
                         name=row['NAME'],
                         post=row['POST'],
                         basic=float(row['BASIC']),
-                        att=int(row['ATT']),
+                        att=float(row['ATT']),
                         ot=float(row['OT']),
                         pension_percentage=float(row.get('PENSION_%', 0))
                     )
@@ -145,7 +150,6 @@ def main():
             post = input("Post: ")
             basic = float(input("Basic salary: "))
             att = int(input("Days attended: "))
-            r_day = float(input("Rate per day: "))
             ot = float(input("Overtime: "))
             pension_percentage = float(input("Pension percentage (as decimal): "))
             emp = Employee(name, post, basic, att, ot, pension_percentage)
@@ -162,13 +166,11 @@ def main():
                 print("Leave blank to keep current value.")
                 new_basic = input(f"New basic (current: {emp.basic}): ")
                 new_att = input(f"New attendance (current: {emp.att}): ")
-                new_r_day = input(f"New rate/day (current: {emp.r_day}): ")
                 new_ot = input(f"New overtime (current: {emp.ot}): ")
 
                 updates = {}
                 if new_basic: updates['basic'] = float(new_basic)
                 if new_att: updates['att'] = int(new_att)
-                if new_r_day: updates['r_day'] = float(new_r_day)
                 if new_ot: updates['ot'] = float(new_ot)
 
                 emp.update(**updates)

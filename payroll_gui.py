@@ -1,10 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-import csv
 import os
 from turtle import pen
 
-from payroll_app import Employee, PayrollSystem  # Reuse your existing logic
+from payroll_app import Employee  # Reuse your existing logic
+try:
+    from payroll_app import PayrollSystem
+except ImportError:
+    # If PayrollSystem is not defined, try importing the correct class or show an error
+    raise ImportError("PayrollSystem class not found in payroll_app.py. Please define it or correct the import.")
 
 class PayrollGUI:
     def __init__(self, root):
@@ -29,8 +33,9 @@ class PayrollGUI:
         tk.Button(frame, text="Load Company", command=self.load_company).pack(side=tk.LEFT)
 
     def setup_table(self):
-        columns = ("NAME", "POST", "BASIC", "ATT", "R/DAY", "OT", "EARNINGS", "GROSS",  "PENSION", "NET")
-        self.tree = ttk.Treeview(self.root, columns=columns, show="headings")
+        columns = ['NAME', 'POST', 'BASIC', 'ATT', 'R/DAY', 'OT', 'EARNINGS']
+        self.tree = ttk.Treeview(root, columns=columns, show='headings')
+
         for col in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=100)
@@ -89,8 +94,6 @@ class PayrollGUI:
                 raise ValueError("Attendance cannot exceed 26 days")
             att = float(att_val)
 
-            r_day = basic / 26
-
             ot_val = simpledialog.askstring("Overtime", "Enter overtime:")
             if ot_val is None:
                 raise ValueError("No input for overtime")
@@ -99,6 +102,7 @@ class PayrollGUI:
             pension_percentage = simpledialog.askfloat("Pension", "Enter pension percentage (as decimal):")
         except Exception:
             messagebox.showerror("Input Error", "Invalid input")
+
             return
 
         emp = Employee(name, post, basic, att, ot, pension_percentage)
