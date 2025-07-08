@@ -3,13 +3,14 @@ import os
 from turtle import pen
 
 class Employee:
-    def __init__(self, name, post, basic, att, ot, pension_percentage):
+    def __init__(self, name, post, basic, att, ot, absnt, pension_percentage):
         self.name = name
         self.post = post
         self.basic = basic
         self.att = att
         self.ot = ot
         self.pension_percentage = pension_percentage
+        self.absnt = absnt
         self.calculate_payroll()
 
     def calculate_payroll(self):
@@ -18,21 +19,22 @@ class Employee:
         self.pension = self.pension_percentage * self.basic
         self.gross = self.earnings + self.ot
         self.taxable = self.gross - 150000
+        self.absnt_amnt = self.absnt * self.absnt
 
         if self.taxable <= 0:
             self.paye_25 = 0
             self.paye_30 = 0
             self.taxable = 0
         else:
-            if self.taxable <= 300000:
+            if self.taxable <= 350000:
                 self.paye_25 = round(self.taxable * 0.25, 2)
                 self.paye_30 = 0
             else:
-                self.paye_25 = round(300000 * 0.25, 2)
-                self.paye_30 = round((self.taxable - 300000) * 0.30, 2)
+                self.paye_25 = round(350000 * 0.25, 2)
+                self.paye_30 = round((self.taxable - 350000) * 0.30, 2)
             
         self.total_paye = round(self.paye_25 + self.paye_30, 2)
-        self.net = round(self.gross - self.total_paye, 2)
+        self.net = round(self.gross - self.pension - self.total_paye - self.absnt_amnt, 2)
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
@@ -49,6 +51,8 @@ class Employee:
             'OT': self.ot,
             'EARNINGS': self.earnings,
             'GROSS': self.gross,
+            'ABSNT': self.absnt,
+            'ABSNT AMNT': self.absnt_amnt,
             'PENSION_%': self.pension_percentage,
             'PENSION': self.pension,
             'TAXABLE': self.taxable,
@@ -90,7 +94,8 @@ class PayrollSystem:
                         basic=float(row['BASIC']),
                         att=float(row['ATT']),
                         ot=float(row['OT']),
-                        pension_percentage=float(row.get('PENSION_%', 0))
+                        pension_percentage=float(row.get('PENSION_%', 0)),
+                        absnt=float(row.get('ABSNT', 0))
                     )
                     self.employees.append(emp)
         except FileNotFoundError:
@@ -151,8 +156,9 @@ def main():
             basic = float(input("Basic salary: "))
             att = int(input("Days attended: "))
             ot = float(input("Overtime: "))
+            absnt = float(input("Days absent: "))
             pension_percentage = float(input("Pension percentage (as decimal): "))
-            emp = Employee(name, post, basic, att, ot, pension_percentage)
+            emp = Employee(name, post, basic, att, ot, absnt, pension_percentage)
             payroll.add_employee(emp)
             print(f"Employee '{name}' added.")
 
@@ -167,11 +173,13 @@ def main():
                 new_basic = input(f"New basic (current: {emp.basic}): ")
                 new_att = input(f"New attendance (current: {emp.att}): ")
                 new_ot = input(f"New overtime (current: {emp.ot}): ")
+                new_absnt = input(f"New absent days (current: {emp.absnt}): ")
 
                 updates = {}
                 if new_basic: updates['basic'] = float(new_basic)
                 if new_att: updates['att'] = int(new_att)
                 if new_ot: updates['ot'] = float(new_ot)
+                if new_absnt: updates['absnt'] = float(new_absnt)
 
                 emp.update(**updates)
                 print("Employee updated.")
