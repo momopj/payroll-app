@@ -15,11 +15,11 @@ class Employee:
 
     def calculate_payroll(self):
         self.r_day = round(self.basic / 26, 2)
-        self.earnings = self.att * self.r_day
-        self.pension = self.pension_percentage * self.basic
-        self.gross = self.earnings + self.ot
+        self.earnings = round(self.att * self.r_day, 2)
+        self.pension = round(self.pension_percentage * self.basic, 2)
+        self.gross = round(self.earnings + self.ot, 2)
         self.taxable = self.gross - 150000
-        self.absnt_amnt = self.absnt * self.absnt
+        self.absnt_amnt = round(self.absnt * self.r_day, 2)
 
         if self.taxable <= 0:
             self.paye_25 = 0

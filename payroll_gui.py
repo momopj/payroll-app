@@ -33,7 +33,7 @@ class PayrollGUI:
         tk.Button(frame, text="Load Company", command=self.load_company).pack(side=tk.LEFT)
 
     def setup_table(self):
-        columns = ['NAME', 'POST', 'BASIC', 'ATT', 'R/DAY', 'OT', 'EARNINGS']
+        columns = ['NAME', 'POST', 'BASIC', 'ATT', 'ABSNT', 'R/DAY', 'OT', 'EARNINGS']
         self.tree = ttk.Treeview(root, columns=columns, show='headings')
 
         for col in columns:
@@ -47,9 +47,10 @@ class PayrollGUI:
 
         tk.Button(frame, text="Add Employee", command=self.add_employee).pack(side=tk.LEFT, padx=5)
         tk.Button(frame, text="Delete Employee", command=self.delete_employee).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame, text="Update Employee", command=self.update_employee).pack(side=tk.LEFT, padx=5)
         tk.Button(frame, text="Save to CSV", command=self.save_to_csv).pack(side=tk.LEFT, padx=5)
         tk.Button(frame, text="Reload Data", command=self.reload_data).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Exit", command=self.update_employee).pack(side=tk.LEFT, padx=5)  
+        tk.Button(frame, text="Exit", command=self.exit_app).pack(side=tk.LEFT, padx=5)  
 
     def load_company(self):
         company = self.company_entry.get().strip().lower().replace(" ", "_")
@@ -69,7 +70,7 @@ class PayrollGUI:
         if not self.payroll:
             return
         for emp in self.payroll.employees:
-            self.tree.insert("", "end", values=(emp.name, emp.post, emp.basic, emp.att, emp.r_day, emp.ot, emp.net))
+            self.tree.insert("", "end", values=(emp.name, emp.post, emp.basic, emp.att, emp.absnt, emp.r_day, emp.ot, emp.net))
 
     def add_employee(self):
         if not self.payroll:
@@ -209,9 +210,15 @@ class PayrollGUI:
             self.refresh_table()
         else:
             messagebox.showerror("Error", "No company loaded.")
+    
+    def exit_app(self):
+        if messagebox.askokcancel("Exit", "Do you really want to exit?"):
+            self.root.destroy()
+
 
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = PayrollGUI(root)
+    root.protocol("WM_DELETE_WINDOW", app.exit_app)
     root.mainloop()
