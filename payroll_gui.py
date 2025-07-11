@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
+from tkinter import filedialog
 import os
 from turtle import pen
 
@@ -17,6 +18,10 @@ class PayrollGUI:
 
         self.filename = None
         self.payroll = None
+
+        self.status_label = tk.Label(self.root, text="No file loaded", fg="blue")
+        self.status_label.pack(pady=5)
+
 
         self.setup_company_selector()
         self.setup_table()
@@ -49,20 +54,25 @@ class PayrollGUI:
         tk.Button(frame, text="Delete Employee", command=self.delete_employee).pack(side=tk.LEFT, padx=5)
         tk.Button(frame, text="Update Employee", command=self.update_employee).pack(side=tk.LEFT, padx=5)
         tk.Button(frame, text="Save to CSV", command=self.save_to_csv).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame, text="Save As New File", command=self.save_as_new_file).pack(side=tk.LEFT, padx=5)
         tk.Button(frame, text="Reload Data", command=self.reload_data).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame, text="Open File", command=self.open_existing_file).pack(side=tk.LEFT, padx=5)
         tk.Button(frame, text="Exit", command=self.exit_app).pack(side=tk.LEFT, padx=5)  
 
     def load_company(self):
         company = self.company_entry.get().strip().lower().replace(" ", "_")
+
         if not company:
             messagebox.showerror("Error", "Enter a company name")
             return
-
+        
         os.makedirs("companies", exist_ok=True)
         self.filename = os.path.join("companies", f"{company}.csv")
         self.payroll = PayrollSystem(self.filename)
         self.payroll.load_from_csv()
         self.refresh_table()
+
+        self.status_label.config(text=f"Loaded: {os.path.basename(self.filename)}")
 
     def refresh_table(self):
         for row in self.tree.get_children():
@@ -210,7 +220,45 @@ class PayrollGUI:
             self.refresh_table()
         else:
             messagebox.showerror("Error", "No company loaded.")
+
+    def open_existing_file(self):
+        file_path = filedialog.askopenfilename(
+            title="Open Payroll CSV",
+            filetypes=[("CSV Files", "*.csv")],
+            initialdir="companies"  # adjust if your files are elsewhere
+        )
+
+        if not file_path:
+            return  # User cancelled
+
+        self.filename = file_path
+        self.payroll = PayrollSystem(self.filename)
+        self.payroll.load_from_csv()
+        self.refresh_table()
+
+        self.status_label.config(text=f"Loaded: {os.path.basename(self.filename)}")
     
+    def save_as_new_file(self):
+        if not self.payroll or not self.payroll.employees:
+            messagebox.showinfo("Info", "No data to save.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+            initialdir="companies",
+            title="Save Payroll As"
+        )
+
+        if not file_path:
+            return  # Cancelled
+
+        # Save using new filename
+        self.filename = file_path
+        self.payroll.filename = file_path
+        self.payroll.save_to_csv()
+        self.status_label.config(text=f"Saved As: {os.path.basename(file_path)}")
+
     def exit_app(self):
         if messagebox.askokcancel("Exit", "Do you really want to exit?"):
             self.root.destroy()
