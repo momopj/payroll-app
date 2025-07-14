@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, simpledialog
 from tkinter import filedialog
 import os
 from turtle import pen
+from datetime import datetime
 
 from payroll_app import Employee  # Reuse your existing logic
 try:
@@ -38,7 +39,7 @@ class PayrollGUI:
         tk.Button(frame, text="Load Company", command=self.load_company).pack(side=tk.LEFT)
 
     def setup_table(self):
-        columns = ['NAME', 'POST', 'BASIC', 'ATT', 'ABSNT', 'R/DAY', 'OT', 'EARNINGS']
+        columns = ['NAME','DOB', 'GENDER', 'POST', 'BASIC', 'ATT', 'ABSNT', 'R/DAY', 'OT', 'EARNINGS']
         self.tree = ttk.Treeview(root, columns=columns, show='headings')
 
         for col in columns:
@@ -75,12 +76,24 @@ class PayrollGUI:
         self.status_label.config(text=f"Loaded: {os.path.basename(self.filename)}")
 
     def refresh_table(self):
-        for row in self.tree.get_children():
-            self.tree.delete(row)
+        self.tree.delete(*self.tree.get_children())
+        
         if not self.payroll:
             return
+
         for emp in self.payroll.employees:
-            self.tree.insert("", "end", values=(emp.name, emp.post, emp.basic, emp.att, emp.absnt, emp.r_day, emp.ot, emp.net))
+            self.tree.insert("", "end", values=(
+                emp.name,
+                emp.dob.strftime("%Y-%m-%d") if hasattr(emp, "dob") else "",
+                emp.gender if hasattr(emp, "gender") else "",
+                emp.post,
+                emp.basic,
+                emp.att,
+                emp.absnt,
+                emp.r_day,
+                emp.ot,
+                emp.net
+            ))
 
     def add_employee(self):
         if not self.payroll:
@@ -89,59 +102,55 @@ class PayrollGUI:
 
         try:
             name_val = simpledialog.askstring("Name", "Enter name:")
-            if name_val is None or not name_val.strip():
+            if not name_val:
                 raise ValueError("No input for name")
             name = name_val.strip()
-            
+            print(f"Name: {name}")
 
-            post_val = simpledialog.askstring("Post", "Enter post:")
-            if post_val is None or not post_val.strip():
+            year = simpledialog.askinteger("Year", "Enter birth year:")
+            month = simpledialog.askinteger("Month", "Enter birth month:")
+            day = simpledialog.askinteger("Day", "Enter birth day:")
+            if year is None or month is None or day is None:
+                raise ValueError("Invalid DOB: year, month, and day must be provided")
+            dob = datetime(int(year), int(month), int(day))
+            print(f"DOB: {dob}")
+
+            gender = simpledialog.askstring("Gender", "Enter Gender:")
+            if not gender:
+                raise ValueError("No input for gender")
+
+            post = simpledialog.askstring("Post", "Enter post:")
+            if not post:
                 raise ValueError("No input for post")
-            post = post_val.strip()
 
-            basic_val = simpledialog.askfloat("Basic", "Enter basic salary:")
-            if basic_val is None:
-                raise ValueError("No input for basic salary")
-            basic = float(basic_val)
+            basic = simpledialog.askfloat("Basic", "Enter basic salary:")
+            if basic is None:
+                raise ValueError("No input for basic")
 
-            att_val = simpledialog.askfloat("Attendance", "Days attended:")
-            if att_val is None:
-                raise ValueError("No input for attendance")
-            if att_val < 0:
-                raise ValueError("Attendance cannot be negative")
-            if att_val > 26:
-                raise ValueError("Attendance cannot exceed 26 days")
-            att = float(att_val)
+            att = simpledialog.askfloat("Attendance", "Days attended (max 26):")
+            if att is None or not (0 <= att <= 26):
+                raise ValueError("Invalid attendance")
 
-            ot_val = simpledialog.askfloat("Overtime", "Enter overtime:")
-            if ot_val is None:
-                raise ValueError("No input for overtime")
-            if ot_val < 0:
-                raise ValueError("Overtime cannot be negative")
-            ot = float(ot_val)
+            ot = simpledialog.askfloat("Overtime", "Enter overtime:")
+            if ot is None or ot < 0:
+                raise ValueError("Invalid overtime")
 
-            absnt_val = simpledialog.askfloat("Absent", "Enter days absent:")
-            if absnt_val is None:
-                raise ValueError("No input for absent days")
-            if absnt_val < 0:
-                raise ValueError("Absent days cannot be negative")
-            absnt = float(absnt_val)
+            absnt = simpledialog.askfloat("Absent", "Enter days absent:")
+            if absnt is None or absnt < 0:
+                raise ValueError("Invalid absent")
 
-            pension_percentage_val = simpledialog.askfloat("Pension", "Enter pension percentage (as decimal):")
-            if pension_percentage_val is None:
-                raise ValueError("No input for pension percentage")
-            if pension_percentage_val < 0 or pension_percentage_val > 1:
-                raise ValueError("Pension percentage must be between 0 and 1")
-            pension_percentage = float(pension_percentage_val)
-            
-        except Exception:
-            messagebox.showerror("Input Error", "Invalid input")
+            pension_bool = messagebox.askyesno("Pension", "Does this employee have a pension?")
 
-            return
+            print(f"Creating Employee: {name}, {post}, {basic}")
+            emp = Employee(name, dob, gender, post, basic, att, ot, absnt, pension_bool)
+            self.payroll.add_employee(emp)
+            self.refresh_table()
+            print("Employee added and table refreshed.")
 
-        emp = Employee(name, post, basic, att, ot, absnt, pension_percentage)
-        self.payroll.add_employee(emp)
-        self.refresh_table()
+        except Exception as e:
+            messagebox.showerror("Input Error", str(e))
+            print(f"Error adding employee: {e}")
+
 
     def delete_employee(self):
         selected = self.tree.selection()
@@ -174,52 +183,85 @@ class PayrollGUI:
         current_values = self.tree.item(selected[0])["values"]
         name = current_values[0]
 
-        # Find the employee object
         if self.payroll is None:
             messagebox.showerror("Error", "No company loaded.")
             return
+
+        # Find the employee object
         emp = next((e for e in self.payroll.employees if e.name == name), None)
         if not emp:
             messagebox.showerror("Error", "Employee not found")
             return
 
-        try:
-            post = simpledialog.askstring("Post", "Enter post:", initialvalue=emp.post)
-            if not post:
-                raise ValueError("Post required")
+        # Ask user what to update
+        options = [
+            "Post", "Basic Salary", "Attendance", "Overtime",
+            "Absent Days", "Pension Status", "Date of Birth"
+        ]
+        field = simpledialog.askstring("Update Field", f"Choose field to update:\n{', '.join(options)}")
 
-            basic = simpledialog.askfloat("Basic Salary", "Enter basic salary:", initialvalue=emp.basic)
-            if basic is None:
-                raise ValueError("Basic salary required")
-
-            att = simpledialog.askfloat("Attendance", "Enter attendance (max 26):", initialvalue=emp.att)
-            if att is None or att < 0 or att > 26:
-                raise ValueError("Invalid attendance")
-
-            ot = simpledialog.askfloat("Overtime", "Enter overtime:", initialvalue=emp.ot)
-            if ot is None or ot < 0:
-                raise ValueError("Invalid overtime")
-
-            absnt = simpledialog.askfloat("Absent", "Enter days absent:", initialvalue=getattr(emp, 'absnt', 0))
-            if absnt is None or absnt < 0:
-                raise ValueError("Invalid absent days")
-
-            pension_percentage = simpledialog.askfloat("Pension", "Enter pension % (0.0 to 1.0):", initialvalue=emp.pension_percentage)
-            if pension_percentage is None or not (0 <= pension_percentage <= 1):
-                raise ValueError("Invalid pension %")
-
-        except ValueError as e:
-            messagebox.showerror("Input Error", str(e))
+        if not field:
             return
 
-        # Update the employee by replacing the object
-        if self.payroll is not None:
-            self.payroll.employees.remove(emp)
-            updated_emp = Employee(emp.name, post, basic, att, ot, absnt, pension_percentage)
-            self.payroll.add_employee(updated_emp)
+        field = field.lower()
+
+        try:
+            if field == "post":
+                new_val = simpledialog.askstring("Post", "Enter new post:", initialvalue=emp.post)
+                emp.post = new_val
+
+            elif field == "basic salary":
+                new_val = simpledialog.askfloat("Basic Salary", "Enter new basic salary:", initialvalue=emp.basic)
+                if new_val is None:
+                    raise ValueError("No input for basic salary")
+                emp.basic = float(new_val)
+
+            elif field == "attendance":
+                new_val = simpledialog.askfloat("Attendance", "Enter new attendance:", initialvalue=emp.att)
+                if new_val is None:
+                    raise ValueError("No input for attendance")
+                if new_val < 0 or new_val > 26:
+                    raise ValueError("Attendance must be between 0 and 26")
+            elif field == "overtime":
+                new_val = simpledialog.askfloat("Overtime", "Enter new overtime hours:", initialvalue=emp.ot)
+                if new_val is None:
+                    raise ValueError("No input for overtime")
+            elif field == "absent days":
+                new_val = simpledialog.askfloat("Absent", "Enter new absent days:", initialvalue=emp.absnt)
+                if new_val is None:
+                    raise ValueError("No input for absent days")
+                emp.absnt = float(new_val)
+
+            elif field == "absent days":
+                new_val = simpledialog.askfloat("Absent", "Enter new absent days:", initialvalue=emp.absnt)
+            elif field == "date of birth":
+                year = simpledialog.askinteger("Year", "Enter year:")
+                month = simpledialog.askinteger("Month", "Enter month:")
+                day = simpledialog.askinteger("Day", "Enter day:")
+                if year is None or month is None or day is None:
+                    raise ValueError("All date of birth fields must be provided")
+                emp.dob = datetime(year, month, day)
+
+            elif field == "date of birth":
+                year = simpledialog.askinteger("Year", "Enter year:")
+                month = simpledialog.askinteger("Month", "Enter month:")
+                day = simpledialog.askinteger("Day", "Enter day:")
+                if year is None or month is None or day is None:
+                    raise ValueError("All date of birth fields must be provided")
+                emp.dob = datetime(year, month, day)
+
+            else:
+                messagebox.showerror("Error", "Invalid field selected.")
+                return
+
+            # Recalculate values
+            emp.calculate_payroll()
+
             self.refresh_table()
-        else:
-            messagebox.showerror("Error", "No company loaded.")
+
+        except Exception as e:
+            messagebox.showerror("Update Error", str(e))
+
 
     def open_existing_file(self):
         file_path = filedialog.askopenfilename(
