@@ -1,25 +1,29 @@
 import csv
 import os
+from datetime import datetime
 from turtle import pen
 
 class Employee:
-    def __init__(self, name, post, basic, att, ot, absnt, pension_percentage):
+    def __init__(self, name, dob, gender, post, basic, att, ot, absnt, pension_bool):
         self.name = name
         self.post = post
         self.basic = basic
         self.att = att
         self.ot = ot
-        self.pension_percentage = pension_percentage
+        self.pension_bool = pension_bool
         self.absnt = absnt
+        self.dob = dob
+        self.gender = gender
         self.calculate_payroll()
 
     def calculate_payroll(self):
-        self.r_day = round(self.basic / 26, 2)
-        self.earnings = round(self.att * self.r_day, 2)
-        self.pension = round(self.pension_percentage * self.basic, 2)
-        self.gross = round(self.earnings + self.ot, 2)
+        self.r_day = self.basic / 26, 2
+        self.earnings = self.att * self.r_day
+        if self.pension_bool == True:
+            self.pension =  0.05 * self.basic
+        self.gross = self.earnings + self.ot
         self.taxable = self.gross - 150000
-        self.absnt_amnt = round(self.absnt * self.r_day, 2)
+        self.absnt_amnt = self.absnt * self.r_day, 2
 
         if self.taxable <= 0:
             self.paye_25 = 0
@@ -44,6 +48,8 @@ class Employee:
     def to_dict(self):
         return {
             'NAME': self.name,
+            'DOB': self.dob,
+            'GENDER': self.gender,
             'POST': self.post,
             'BASIC': self.basic,
             'ATT': self.att,
@@ -53,7 +59,7 @@ class Employee:
             'GROSS': self.gross,
             'ABSNT': self.absnt,
             'ABSNT AMNT': self.absnt_amnt,
-            'PENSION_%': self.pension_percentage,
+            'PENSION?': self.pension_bool,
             'PENSION': self.pension,
             'TAXABLE': self.taxable,
             'PAYE-25%': self.paye_25,
@@ -90,11 +96,13 @@ class PayrollSystem:
                 for row in reader:
                     emp = Employee(
                         name=row['NAME'],
+                        dob=row['DOB'],
+                        gender=row['GENDER'],
                         post=row['POST'],
                         basic=float(row['BASIC']),
                         att=float(row['ATT']),
                         ot=float(row['OT']),
-                        pension_percentage=float(row.get('PENSION_%', 0)),
+                        pension_bool=float(row.get('PENSION?', 0)),
                         absnt=float(row.get('ABSNT', 0))
                     )
                     self.employees.append(emp)
@@ -152,13 +160,23 @@ def main():
 
         if choice == "1":
             name = input("Name: ")
+            try:
+                year = int(input("Enter birth year: "))
+                month = int(input("Enter birth month: "))
+                day = int(input("Enter birth day: "))
+                date_object = datetime(year, month, day)
+            except ValueError:
+                print("Invalid input. Please enter numbers for employees birth year, month and day.")
+                continue
+            dob = date_object
+            gender = input("Gender: ")
             post = input("Post: ")
             basic = float(input("Basic salary: "))
             att = int(input("Days attended: "))
             ot = float(input("Overtime: "))
             absnt = float(input("Days absent: "))
             pension_percentage = float(input("Pension percentage (as decimal): "))
-            emp = Employee(name, post, basic, att, ot, absnt, pension_percentage)
+            emp = Employee(name, dob, gender, post, basic, att, ot, absnt, pension_percentage)
             payroll.add_employee(emp)
             print(f"Employee '{name}' added.")
 
