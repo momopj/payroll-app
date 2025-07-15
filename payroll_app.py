@@ -21,6 +21,8 @@ class Employee:
         self.earnings = self.att * self.r_day
         if self.pension_bool == True:
             self.pension =  0.05 * self.basic
+        else:
+            self.pension = 0
         self.gross = self.earnings + self.ot
         self.taxable = self.gross - 150000
         self.absnt_amnt = self.absnt * self.r_day
@@ -78,15 +80,37 @@ class PayrollSystem:
         self.employees.append(emp)
 
     def save_to_csv(self):
-        if not self.employees:
-            print("No employees to save.")
+        if not self.filename:
             return
 
-        with open(self.filename, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=self.employees[0].to_dict().keys())
+        with open(self.filename, "w", newline="") as file:
+            fieldnames = ["NAME", "DOB", "GENDER", "POST", "PENSION?", "BASIC", "ATT", "ABSNT", "ABSNT_AMNT", "R/DAY", "OT", "PENSION", "EARNINGS", "GROSS", "TAXABLE", "PAYE-25%", "PAYE-30%", "TOTAL PAYE", "NET" ]
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
+
             for emp in self.employees:
-                writer.writerow(emp.to_dict())
+                writer.writerow({
+                    "NAME": emp.name,
+                    "DOB": emp.dob.strftime("%Y-%m-%d") if isinstance(emp.dob, datetime) else emp.dob,
+                    "GENDER": emp.gender,
+                    "POST": emp.post,
+                    "PENSION?": emp.pension_bool,
+                    "BASIC": emp.basic,
+                    "ATT": emp.att,
+                    "ABSNT": emp.absnt,
+                    "ABSNT_AMNT": emp.absnt_amnt,
+                    "R/DAY": emp.r_day,
+                    "OT": emp.ot,
+                    "PENSION": emp.pension,
+                    "EARNINGS": emp.earnings,
+                    "GROSS": emp.gross,
+                    'TAXABLE': emp.taxable,
+                    'PAYE-25%': emp.paye_25,
+                    'PAYE-30%': emp.paye_30,
+                    'TOTAL PAYE': emp.total_paye,
+                    'NET': emp.net
+                })
+
 
     def load_from_csv(self):
         self.employees = []
@@ -94,15 +118,25 @@ class PayrollSystem:
             with open(self.filename, 'r') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
+                    dob = None
+                    if row["DOB"]:
+                        try:
+                            dob = datetime.strptime(row["DOB"].strip(), "%Y-%m-%d")
+                        except ValueError:
+                            try:
+                                dob = datetime.strptime(row["DOB"].strip(), "%Y-%m-%d %H:%M:%S")
+                            except ValueError:
+                                dob = None  # Invalid format, fallback
+
                     emp = Employee(
                         name=row['NAME'],
-                        dob=row['DOB'],
+                        dob=dob,
                         gender=row['GENDER'],
                         post=row['POST'],
                         basic=float(row['BASIC']),
                         att=float(row['ATT']),
                         ot=float(row['OT']),
-                        pension_bool=float(row.get('PENSION?', 0)),
+                        pension_bool=bool(row.get('PENSION?', 0)),
                         absnt=float(row.get('ABSNT', 0))
                     )
                     self.employees.append(emp)

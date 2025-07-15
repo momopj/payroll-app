@@ -39,7 +39,7 @@ class PayrollGUI:
         tk.Button(frame, text="Load Company", command=self.load_company).pack(side=tk.LEFT)
 
     def setup_table(self):
-        columns = ['NAME','DOB', 'GENDER', 'POST', 'BASIC', 'ATT', 'ABSNT', 'R/DAY', 'OT', 'EARNINGS']
+        columns = ['NAME','DOB', 'GENDER', 'POST', 'BASIC', 'ATT', 'ABSNT', 'OT', 'NET']
         self.tree = ttk.Treeview(root, columns=columns, show='headings')
 
         for col in columns:
@@ -82,64 +82,71 @@ class PayrollGUI:
             return
 
         for emp in self.payroll.employees:
+            dob_display = ""
+            if emp.dob:
+                if isinstance(emp.dob, datetime):
+                    dob_display = emp.dob.strftime("%Y-%m-%d")
+                else:
+                    dob_display = str(emp.dob)  # Fallback if it's a string
+
             self.tree.insert("", "end", values=(
                 emp.name,
-                emp.dob.strftime("%Y-%m-%d") if hasattr(emp, "dob") else "",
-                emp.gender if hasattr(emp, "gender") else "",
+                dob_display,
+                emp.gender,
                 emp.post,
                 emp.basic,
                 emp.att,
                 emp.absnt,
-                emp.r_day,
                 emp.ot,
                 emp.net
             ))
 
+
     def add_employee(self):
         if not self.payroll:
-            messagebox.showerror("Error", "Load a company first")
+            messagebox.showerror("Error", "Load a company first", parent=self.root)
             return
 
         try:
-            name_val = simpledialog.askstring("Name", "Enter name:")
+            name_val = simpledialog.askstring("Name", "Enter name:", parent=self.root)
             if not name_val:
                 raise ValueError("No input for name")
             name = name_val.strip()
             print(f"Name: {name}")
 
-            year = simpledialog.askinteger("Year", "Enter birth year:")
-            month = simpledialog.askinteger("Month", "Enter birth month:")
-            day = simpledialog.askinteger("Day", "Enter birth day:")
+            year = simpledialog.askinteger("Year", "Enter birth year:", parent=self.root)
+            month = simpledialog.askinteger("Month", "Enter birth month:", parent=self.root)
+            day = simpledialog.askinteger("Day", "Enter birth day:", parent=self.root)
             if year is None or month is None or day is None:
                 raise ValueError("Invalid DOB: year, month, and day must be provided")
             dob = datetime(int(year), int(month), int(day))
             print(f"DOB: {dob}")
 
-            gender = simpledialog.askstring("Gender", "Enter Gender:")
+            gender = simpledialog.askstring("Gender", "Enter Gender:", parent=self.root)
             if not gender:
                 raise ValueError("No input for gender")
 
-            post = simpledialog.askstring("Post", "Enter post:")
+            post = simpledialog.askstring("Post", "Enter post:", parent=self.root)
             if not post:
                 raise ValueError("No input for post")
 
-            basic = simpledialog.askfloat("Basic", "Enter basic salary:")
+            basic = simpledialog.askfloat("Basic", "Enter basic salary:", parent=self.root)
             if basic is None:
                 raise ValueError("No input for basic")
 
-            att = simpledialog.askfloat("Attendance", "Days attended (max 26):")
+            att = simpledialog.askfloat("Attendance", "Days attended (max 26):", parent=self.root)
             if att is None or not (0 <= att <= 26):
                 raise ValueError("Invalid attendance")
 
-            ot = simpledialog.askfloat("Overtime", "Enter overtime:")
+            ot = simpledialog.askfloat("Overtime", "Enter overtime:", parent=self.root)
             if ot is None or ot < 0:
                 raise ValueError("Invalid overtime")
 
-            absnt = simpledialog.askfloat("Absent", "Enter days absent:")
+            absnt = simpledialog.askfloat("Absent", "Enter days absent:", parent=self.root)
             if absnt is None or absnt < 0:
                 raise ValueError("Invalid absent")
 
-            pension_bool = messagebox.askyesno("Pension", "Does this employee have a pension?")
+            pension_bool = messagebox.askyesno("Pension", "Does this employee have a pension?", parent=self.root)
 
             print(f"Creating Employee: {name}, {post}, {basic}")
             emp = Employee(name, dob, gender, post, basic, att, ot, absnt, pension_bool)
