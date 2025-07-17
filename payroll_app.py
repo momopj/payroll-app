@@ -1,7 +1,6 @@
 import csv
 import os
 from datetime import datetime
-from turtle import pen
 
 class Employee:
     def __init__(self, name, dob, gender, post, basic, att, ot, absnt, pension_bool):
@@ -49,30 +48,6 @@ class Employee:
             setattr(self, key, value)
         self.calculate_payroll()
 
-    def to_dict(self):
-        return {
-            'NAME': self.name,
-            'DOB': self.dob,
-            'GENDER': self.gender,
-            'POST': self.post,
-            'BASIC': self.basic,
-            'ATT': self.att,
-            'R/DAY': self.r_day,
-            'OT': self.ot,
-            'EARNINGS': self.earnings,
-            'GROSS': self.gross,
-            'ABSNT': self.absnt,
-            'ABSNT AMNT': self.absnt_amnt,
-            'PENSION?': self.pension_bool,
-            'PENSION': self.pension,
-            'TAXABLE': self.taxable,
-            'PAYE-25%': self.paye_25,
-            'PAYE-30%': self.paye_30,
-            'TOTAL PAYE': self.total_paye,
-            'NET': self.net
-        }
-
-
 class PayrollSystem:
     def __init__(self, filename='payroll.csv'):
         self.filename = filename
@@ -105,7 +80,7 @@ class PayrollSystem:
             for emp in self.employees:
                 writer.writerow({
                     "NAME": emp.name,
-                    "DOB": emp.dob.strftime("%Y-%m-%d") if isinstance(emp.dob, datetime) else emp.dob,
+                    "DOB": emp.dob.strftime("%d.%m.%Y") if isinstance(emp.dob, datetime) else emp.dob,
                     "GENDER": emp.gender,
                     "POST": emp.post,
                     "PENSION?": emp.pension_bool,

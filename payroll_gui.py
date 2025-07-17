@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from tkinter import filedialog
 import os
-from turtle import pen
 from datetime import datetime
 
 from payroll_app import Employee  # Reuse your existing logic
