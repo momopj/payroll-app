@@ -274,7 +274,7 @@ class PayrollGUI:
         file_path = filedialog.askopenfilename(
             title="Open Payroll CSV",
             filetypes=[("CSV Files", "*.csv")],
-            initialdir="companies"  # adjust if your files are elsewhere
+            initialdir="seeds"  # adjust if your files are elsewhere
         )
 
         if not file_path:

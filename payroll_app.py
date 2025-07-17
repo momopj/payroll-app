@@ -19,10 +19,12 @@ class Employee:
     def calculate_payroll(self):
         self.r_day = self.basic / 26
         self.earnings = self.att * self.r_day
+
         if self.pension_bool == True:
             self.pension =  0.05 * self.basic
         else:
             self.pension = 0
+
         self.gross = self.earnings + self.ot
         self.taxable = self.gross - 150000
         self.absnt_amnt = self.absnt * self.r_day
@@ -79,12 +81,24 @@ class PayrollSystem:
     def add_employee(self, emp):
         self.employees.append(emp)
 
+    @staticmethod
+    def safe_float(value, default=0.0):
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return default
+
+
     def save_to_csv(self):
         if not self.filename:
             return
 
-        with open(self.filename, "w", newline="") as file:
-            fieldnames = ["NAME", "DOB", "GENDER", "POST", "PENSION?", "BASIC", "ATT", "ABSNT", "ABSNT_AMNT", "R/DAY", "OT", "PENSION", "EARNINGS", "GROSS", "TAXABLE", "PAYE-25%", "PAYE-30%", "TOTAL PAYE", "NET" ]
+        with open(self.filename, "w", newline="", encoding="utf-8") as file:
+            fieldnames = [
+                "NAME", "DOB", "GENDER", "POST", "PENSION?", "BASIC", "ATT", "ABSNT", "ABSNT_AMNT",
+                "R/DAY", "OT", "PENSION", "EARNINGS", "GROSS", "TAXABLE",
+                "PAYE-25%", "PAYE-30%", "TOTAL PAYE", "NET"
+            ]
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
 
@@ -104,40 +118,51 @@ class PayrollSystem:
                     "PENSION": emp.pension,
                     "EARNINGS": emp.earnings,
                     "GROSS": emp.gross,
-                    'TAXABLE': emp.taxable,
-                    'PAYE-25%': emp.paye_25,
-                    'PAYE-30%': emp.paye_30,
-                    'TOTAL PAYE': emp.total_paye,
-                    'NET': emp.net
+                    "TAXABLE": emp.taxable,
+                    "PAYE-25%": emp.paye_25,
+                    "PAYE-30%": emp.paye_30,
+                    "TOTAL PAYE": emp.total_paye,
+                    "NET": emp.net
                 })
 
 
     def load_from_csv(self):
         self.employees = []
         try:
-            with open(self.filename, 'r') as f:
+            with open(self.filename, 'r', encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
+                    # Parse DOB safely, support multiple formats
                     dob = None
-                    if row["DOB"]:
-                        try:
-                            dob = datetime.strptime(row["DOB"].strip(), "%Y-%m-%d")
-                        except ValueError:
+                    raw_dob = row.get("DOB", "").strip()
+                    if raw_dob:
+                        for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%m/%d/%Y", "%d.%m.%Y", "%d-%b-%y"):
                             try:
-                                dob = datetime.strptime(row["DOB"].strip(), "%Y-%m-%d %H:%M:%S")
+                                dob = datetime.strptime(raw_dob, fmt)
+                                break
                             except ValueError:
-                                dob = None  # Invalid format, fallback
+                                continue
+
+                    # Safe float conversion for numeric fields
+                    basic = PayrollSystem.safe_float(row.get("BASIC"))
+                    att = PayrollSystem.safe_float(row.get("ATT"))
+                    ot = PayrollSystem.safe_float(row.get("OT"))
+                    absnt = PayrollSystem.safe_float(row.get("ABSNT"))
+
+                    # Correct pension Boolean handling
+                    pension_raw = str(row.get("PENSION?", "")).strip().lower()
+                    pension_bool = pension_raw in ["true", "yes", "1"]
 
                     emp = Employee(
-                        name=row['NAME'],
+                        name=row.get("NAME", "Unknown"),
                         dob=dob,
-                        gender=row['GENDER'],
-                        post=row['POST'],
-                        basic=float(row['BASIC']),
-                        att=float(row['ATT']),
-                        ot=float(row['OT']),
-                        pension_bool=bool(row.get('PENSION?', 0)),
-                        absnt=float(row.get('ABSNT', 0))
+                        gender=row.get("GENDER", ""),
+                        post=row.get("POST", ""),
+                        basic=basic,
+                        att=att,
+                        ot=ot,
+                        absnt=absnt,
+                        pension_bool=pension_bool
                     )
                     self.employees.append(emp)
         except FileNotFoundError:
