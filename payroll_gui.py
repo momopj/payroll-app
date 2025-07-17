@@ -1,105 +1,119 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
-from tkinter import filedialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
 import os
 from datetime import datetime
-
-from payroll_app import Employee  # Reuse your existing logic
-try:
-    from payroll_app import PayrollSystem
-except ImportError:
-    # If PayrollSystem is not defined, try importing the correct class or show an error
-    raise ImportError("PayrollSystem class not found in payroll_app.py. Please define it or correct the import.")
+from payroll_app import Employee, PayrollSystem
 
 class PayrollGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Payroll System - GUI")
+        self.root.title("Payroll Management System")
+        self.root.geometry("1000x600")
+
+        # Apply ttk theme
+        style = ttk.Style()
+        style.theme_use("clam")  # Other options: 'alt', 'vista', 'default'
 
         self.filename = None
         self.payroll = None
 
-        self.status_label = tk.Label(self.root, text="No file loaded", fg="blue")
-        self.status_label.pack(pady=5)
+        # Menu Bar
+        self.create_menu()
 
-
+        # Top Frame (Company Selector)
         self.setup_company_selector()
+
+        # Middle Frame (Employee Table)
         self.setup_table()
+
+        # Bottom Frame (Buttons)
         self.setup_buttons()
 
+        # Status Bar
+        self.status_label = ttk.Label(self.root, text="No file loaded", relief=tk.SUNKEN, anchor="w")
+        self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def create_menu(self):
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Open", command=self.open_existing_file)
+        file_menu.add_command(label="Save", command=self.save_to_csv)
+        file_menu.add_command(label="Save As", command=self.save_as_new_file)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.exit_app)
+        menubar.add_cascade(label="File", menu=file_menu)
+
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(label="About", command=lambda: messagebox.showinfo("About", "Payroll System v2.0"))
+        menubar.add_cascade(label="Help", menu=help_menu)
+
     def setup_company_selector(self):
-        frame = tk.Frame(self.root)
-        frame.pack(pady=10)
+        frame = ttk.LabelFrame(self.root, text="Company")
+        frame.pack(fill=tk.X, padx=10, pady=10)
 
-        tk.Label(frame, text="Company Name:").pack(side=tk.LEFT)
-        self.company_entry = tk.Entry(frame)
+        ttk.Label(frame, text="Company Name:").pack(side=tk.LEFT, padx=5, pady=5)
+        self.company_entry = ttk.Entry(frame, width=30)
         self.company_entry.pack(side=tk.LEFT, padx=5)
-
-        tk.Button(frame, text="Load Company", command=self.load_company).pack(side=tk.LEFT)
+        ttk.Button(frame, text="Load Company", command=self.load_company).pack(side=tk.LEFT, padx=5)
 
     def setup_table(self):
-        columns = ['NAME','DOB', 'GENDER', 'POST', 'BASIC', 'ATT', 'ABSNT', 'OT', 'NET']
-        self.tree = ttk.Treeview(root, columns=columns, show='headings')
+        table_frame = ttk.Frame(self.root)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ['NAME', 'DOB', 'GENDER', 'POST', 'BASIC', 'ATT', 'ABSNT', 'OT', 'NET']
+        self.tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
 
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
-        self.tree.pack(pady=10, fill=tk.BOTH, expand=True)
+            self.tree.column(col, anchor="center", width=100)
+
+        # Add Scrollbars
+        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
+        hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree.xview)
+        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        vsb.grid(row=0, column=1, sticky="ns")
+        hsb.grid(row=1, column=0, sticky="ew")
+
+        table_frame.rowconfigure(0, weight=1)
+        table_frame.columnconfigure(0, weight=1)
 
     def setup_buttons(self):
-        frame = tk.Frame(self.root)
-        frame.pack(pady=10)
+        frame = ttk.Frame(self.root)
+        frame.pack(fill=tk.X, pady=10)
 
-        tk.Button(frame, text="Add Employee", command=self.add_employee).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Delete Employee", command=self.delete_employee).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Update Employee", command=self.update_employee).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Save to CSV", command=self.save_to_csv).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Save As New File", command=self.save_as_new_file).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Reload Data", command=self.reload_data).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Open File", command=self.open_existing_file).pack(side=tk.LEFT, padx=5)
-        tk.Button(frame, text="Exit", command=self.exit_app).pack(side=tk.LEFT, padx=5)  
+        ttk.Button(frame, text="Add Employee", command=self.add_employee, width=18).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame, text="Update Employee", command=self.update_employee, width=18).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame, text="Delete Employee", command=self.delete_employee, width=18).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame, text="Reload Data", command=self.reload_data, width=18).pack(side=tk.LEFT, padx=5)
 
+    # -------- Existing Functional Methods (No Changes) -------- #
     def load_company(self):
         company = self.company_entry.get().strip().lower().replace(" ", "_")
-
         if not company:
             messagebox.showerror("Error", "Enter a company name")
             return
-        
+
         os.makedirs("companies", exist_ok=True)
         self.filename = os.path.join("companies", f"{company}.csv")
         self.payroll = PayrollSystem(self.filename)
         self.payroll.load_from_csv()
         self.refresh_table()
-
         self.status_label.config(text=f"Loaded: {os.path.basename(self.filename)}")
 
     def refresh_table(self):
         self.tree.delete(*self.tree.get_children())
-        
         if not self.payroll:
             return
-
         for emp in self.payroll.employees:
-            dob_display = ""
-            if emp.dob:
-                if isinstance(emp.dob, datetime):
-                    dob_display = emp.dob.strftime("%Y-%m-%d")
-                else:
-                    dob_display = str(emp.dob)  # Fallback if it's a string
-
+            dob_display = emp.dob.strftime("%Y-%m-%d") if isinstance(emp.dob, datetime) else str(emp.dob)
             self.tree.insert("", "end", values=(
-                emp.name,
-                dob_display,
-                emp.gender,
-                emp.post,
-                emp.basic,
-                emp.att,
-                emp.absnt,
-                emp.ot,
-                emp.net
+                emp.name, dob_display, emp.gender, emp.post,
+                emp.basic, emp.att, emp.absnt, emp.ot, emp.net
             ))
-
 
     def add_employee(self):
         if not self.payroll:
@@ -273,7 +287,7 @@ class PayrollGUI:
         file_path = filedialog.askopenfilename(
             title="Open Payroll CSV",
             filetypes=[("CSV Files", "*.csv")],
-            initialdir="seeds"  # adjust if your files are elsewhere
+            initialdir="companies"  # adjust if your files are elsewhere
         )
 
         if not file_path:
