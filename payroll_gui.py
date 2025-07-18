@@ -20,9 +20,6 @@ class PayrollGUI:
         # Menu Bar
         self.create_menu()
 
-        # Top Frame (Company Selector)
-        self.setup_company_selector()
-
         # Middle Frame (Employee Table)
         self.setup_table()
 
@@ -48,15 +45,6 @@ class PayrollGUI:
         help_menu = tk.Menu(menubar, tearoff=0)
         help_menu.add_command(label="About", command=lambda: messagebox.showinfo("About", "Payroll System v2.0"))
         menubar.add_cascade(label="Help", menu=help_menu)
-
-    def setup_company_selector(self):
-        frame = ttk.LabelFrame(self.root, text="Company")
-        frame.pack(fill=tk.X, padx=10, pady=10)
-
-        ttk.Label(frame, text="Company Name:").pack(side=tk.LEFT, padx=5, pady=5)
-        self.company_entry = ttk.Entry(frame, width=30)
-        self.company_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Button(frame, text="Load Company", command=self.load_company).pack(side=tk.LEFT, padx=5)
 
     def setup_table(self):
         table_frame = ttk.Frame(self.root)
@@ -89,20 +77,6 @@ class PayrollGUI:
         ttk.Button(frame, text="Update Employee", command=self.update_employee, width=18).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame, text="Delete Employee", command=self.delete_employee, width=18).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame, text="Reload Data", command=self.reload_data, width=18).pack(side=tk.LEFT, padx=5)
-
-    # -------- Existing Functional Methods (No Changes) -------- #
-    def load_company(self):
-        company = self.company_entry.get().strip().lower().replace(" ", "_")
-        if not company:
-            messagebox.showerror("Error", "Enter a company name")
-            return
-
-        os.makedirs("companies", exist_ok=True)
-        self.filename = os.path.join("companies", f"{company}.csv")
-        self.payroll = PayrollSystem(self.filename)
-        self.payroll.load_from_csv()
-        self.refresh_table()
-        self.status_label.config(text=f"Loaded: {os.path.basename(self.filename)}")
 
     def refresh_table(self):
         self.tree.delete(*self.tree.get_children())
