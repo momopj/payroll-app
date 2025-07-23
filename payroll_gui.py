@@ -77,6 +77,7 @@ class PayrollGUI:
         ttk.Button(frame, text="Update Employee", command=self.update_employee, width=18).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame, text="Delete Employee", command=self.delete_employee, width=18).pack(side=tk.LEFT, padx=5)
         ttk.Button(frame, text="Reload Data", command=self.reload_data, width=18).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame, text="Add Employee at Position", command=self.add_employee_at_position).pack(side=tk.LEFT, padx=5)
 
     def refresh_table(self):
         self.tree.delete(*self.tree.get_children())
@@ -144,6 +145,56 @@ class PayrollGUI:
         except Exception as e:
             messagebox.showerror("Input Error", str(e))
             print(f"Error adding employee: {e}")
+
+    def add_employee_at_position(self):
+        if not self.payroll:
+            messagebox.showerror("Error", "Load a company first", parent=self.root)
+            return
+
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showinfo("Info", "Select a row to insert above or below")
+            return
+
+        selected_item = selected[0]
+        selected_index = self.tree.index(selected_item)
+
+        choice = messagebox.askquestion("Insert Position", "Add ABOVE the selected row?\nClick 'No' for BELOW")
+        insert_index = selected_index if choice == "yes" else selected_index + 1
+
+        try:
+            # Collect employee details (same as add_employee)
+            name = simpledialog.askstring("Name", "Enter name:", parent=self.root)
+            if not name:
+                raise ValueError("Name cannot be empty")
+
+            year = simpledialog.askinteger("Year", "Enter birth year:", parent=self.root)
+            month = simpledialog.askinteger("Month", "Enter birth month:", parent=self.root)
+            day = simpledialog.askinteger("Day", "Enter birth day:", parent=self.root)
+            if year is None or month is None or day is None:
+                raise ValueError("Invalid Date of Birth")
+            dob = datetime(year, month, day)
+
+            gender = simpledialog.askstring("Gender", "Enter Gender:", parent=self.root)
+            post = simpledialog.askstring("Post", "Enter post:", parent=self.root)
+            basic = simpledialog.askfloat("Basic", "Enter basic salary:", parent=self.root)
+            att = simpledialog.askfloat("Attendance", "Days attended (max 26):", parent=self.root)
+            ot = simpledialog.askfloat("Overtime", "Enter overtime:", parent=self.root)
+            absnt = simpledialog.askfloat("Absent", "Enter days absent:", parent=self.root)
+            pension_bool = messagebox.askyesno("Pension", "Does this employee have a pension?", parent=self.root)
+
+            emp = Employee(name, dob, gender, post, basic, att, ot, absnt, pension_bool)
+
+            # Insert employee into payroll list at specific index
+            self.payroll.employees.insert(insert_index, emp)
+
+            # Refresh the table
+            self.refresh_table()
+            messagebox.showinfo("Success", f"Employee added at position {insert_index+1}")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
 
 
     def delete_employee(self):
