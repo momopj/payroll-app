@@ -25,22 +25,27 @@ class Employee:
             self.pension = 0
 
         self.gross = self.earnings + self.ot
-        self.taxable = self.gross - 150000
         self.absnt_amnt = self.absnt * self.r_day
 
-        if self.taxable <= 0:
-            self.paye_25 = 0
+        if self.gross < 170000:
             self.paye_30 = 0
-            self.taxable = 0
+            self.paye_35 = 0
+            self.paye_40 = 0
         else:
-            if self.taxable <= 350000:
-                self.paye_25 = round(self.taxable * 0.25, 2)
+            if 170000 <= self.gross < 1570000:
+                self.paye_30 = round((self.gross) * 0.30, 2)
+                self.paye_35 = 0
+                self.paye_40 = 0
+            if 1570000 <= self.gross < 10000000:
+                self.paye_35 = round((self.gross) * 0.35, 2)
                 self.paye_30 = 0
-            else:
-                self.paye_25 = round(350000 * 0.25, 2)
-                self.paye_30 = round((self.taxable - 350000) * 0.30, 2)
+                self.paye_40 = 0
+            if 10000000 <= self.gross:
+                self.paye_40 = round((self.gross) * 0.40, 2)
+                self.paye_35 = 0
+                self.paye_30 = 0
             
-        self.total_paye = round(self.paye_25 + self.paye_30, 2)
+        self.total_paye = round(self.paye_30 + self.paye_35 + self.paye_40 , 2)
         self.net = round(self.gross - self.pension - self.total_paye - self.absnt_amnt, 2)
 
     def update(self, **kwargs):
