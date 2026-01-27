@@ -26,24 +26,26 @@ class Employee:
 
         self.gross = self.earnings + self.ot
         self.absnt_amnt = self.absnt * self.r_day
-
-        if self.gross < 170000:
+        self.taxable = self.gross - 170000
+        if self.taxable < 0:
             self.paye_30 = 0
             self.paye_35 = 0
             self.paye_40 = 0
         else:
-            if 170000 <= self.gross < 1570000:
-                self.paye_30 = round((self.gross) * 0.30, 2)
+            if 0 <= self.taxable < 1400000:
+                self.paye_30 = round((self.taxable) * 0.30, 2)
                 self.paye_35 = 0
                 self.paye_40 = 0
-            if 1570000 <= self.gross < 10000000:
-                self.paye_35 = round((self.gross) * 0.35, 2)
-                self.paye_30 = 0
+            if 1400000 <= self.taxable < 9830000:
+                self.remainder = self.taxable - 1400000
+                self.paye_35 = round((self.remainder) * 0.35, 2)
+                self.paye_30 = round((1400000) * 0.30, 2)
                 self.paye_40 = 0
-            if 10000000 <= self.gross:
-                self.paye_40 = round((self.gross) * 0.40, 2)
-                self.paye_35 = 0
-                self.paye_30 = 0
+            if 9830000 <= self.taxable:
+                self.remainder = self.taxable - 9830000
+                self.paye_40 = round((self.remainder) * 0.40, 2)
+                self.paye_35 = round((9830000) * 0.35, 2)
+                self.paye_30 = round((1400000) * 0.30, 2)
             
         self.total_paye = round(self.paye_30 + self.paye_35 + self.paye_40 , 2)
         self.net = round(self.gross - self.pension - self.total_paye - self.absnt_amnt, 2)
