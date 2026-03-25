@@ -79,7 +79,7 @@ class PayrollSystem:
             fieldnames = [
                 "NAME", "DOB", "GENDER", "POST", "PENSION?", "BASIC", "ATT", "ABSNT", "ABSNT_AMNT",
                 "R/DAY", "OT", "PENSION", "EARNINGS", "GROSS", "TAXABLE",
-                "PAYE-25%", "PAYE-30%", "TOTAL PAYE", "NET"
+                "PAYE-30%", "PAYE-35%", "PAYE-40%", "TOTAL PAYE", "NET"
             ]
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
@@ -101,8 +101,9 @@ class PayrollSystem:
                     "EARNINGS": emp.earnings,
                     "GROSS": emp.gross,
                     "TAXABLE": emp.taxable,
-                    "PAYE-25%": emp.paye_25,
                     "PAYE-30%": emp.paye_30,
+                    "PAYE-35%": emp.paye_35,
+                    "PAYE-40%": emp.paye_40,
                     "TOTAL PAYE": emp.total_paye,
                     "NET": emp.net
                 })

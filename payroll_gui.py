@@ -1,8 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 import os
+import sys
 from datetime import datetime
 from payroll_app import Employee, PayrollSystem
+
+def get_base_path():
+    """Get the correct base path whether running as .exe or as script."""
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
 
 class PayrollGUI:
     def __init__(self, root):
@@ -267,25 +274,19 @@ class PayrollGUI:
                     raise ValueError("No input for attendance")
                 if new_val < 0 or new_val > 26:
                     raise ValueError("Attendance must be between 0 and 26")
+                emp.att = float(new_val)
+
             elif field == "overtime":
                 new_val = simpledialog.askfloat("Overtime", "Enter new overtime hours:", initialvalue=emp.ot)
                 if new_val is None:
                     raise ValueError("No input for overtime")
+                emp.ot = float(new_val)
+
             elif field == "absent days":
                 new_val = simpledialog.askfloat("Absent", "Enter new absent days:", initialvalue=emp.absnt)
                 if new_val is None:
                     raise ValueError("No input for absent days")
                 emp.absnt = float(new_val)
-
-            elif field == "absent days":
-                new_val = simpledialog.askfloat("Absent", "Enter new absent days:", initialvalue=emp.absnt)
-            elif field == "date of birth":
-                year = simpledialog.askinteger("Year", "Enter year:")
-                month = simpledialog.askinteger("Month", "Enter month:")
-                day = simpledialog.askinteger("Day", "Enter day:")
-                if year is None or month is None or day is None:
-                    raise ValueError("All date of birth fields must be provided")
-                emp.dob = datetime(year, month, day)
 
             elif field == "date of birth":
                 year = simpledialog.askinteger("Year", "Enter year:")
@@ -312,7 +313,7 @@ class PayrollGUI:
         file_path = filedialog.askopenfilename(
             title="Open Payroll CSV",
             filetypes=[("CSV Files", "*.csv")],
-            initialdir="companies"  # adjust if your files are elsewhere
+            initialdir=os.path.join(get_base_path(), "companies")
         )
 
         if not file_path:
@@ -333,7 +334,7 @@ class PayrollGUI:
         file_path = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
-            initialdir="companies",
+            initialdir=os.path.join(get_base_path(), "companies"),
             title="Save Payroll As"
         )
 
